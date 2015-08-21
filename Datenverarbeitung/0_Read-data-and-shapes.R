@@ -1,0 +1,1085 @@
+#******************************************
+#
+#  Read data and shapes
+#
+# 
+#******************************************
+
+Sys.setlocale("LC_ALL", 'en_GB.UTF-8')
+Sys.setenv(LANG = "en_US.UTF-8")
+
+# ____ Packages ______ -----
+
+#install.packages(c("spdep",      "sp",      "maptools", "lattice", 
+#                   "rgdal",      "rgeos",   "foreign",  "PBSmapping",
+#                   "plyr",    "reshape2"))
+library("spdep")
+library("sp")
+library("maptools")
+library("lattice")
+library("rgdal")
+library("rgeos")
+library("foreign")
+library("PBSmapping")
+library("plyr")
+library("reshape2")
+
+
+#§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# I.) Rohdaten einlesen ------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
+
+#~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- a.) Einwohner -----
+#~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+EW_files <- dir(path="EW_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/EW_-LOR-/")
+EW <- lapply(EW_files, read.table, header = TRUE, sep=";",fill=TRUE,
+             dec=",", stringsAsFactors =F, colClasses=c(RAUMID="factor"))
+EW <- do.call("rbind", EW) # aus Liste von data.frames einen long Datensatz machen
+EW$ZEIT[EW$ZEIT == 200712] <- 2007
+EW$ZEIT[EW$ZEIT == 200812] <- 2008
+EW$ZEIT[EW$ZEIT == 200912] <- 2009
+EW$ZEIT[EW$ZEIT == 201012] <- 2010
+EW$ZEIT[EW$ZEIT == 201112] <- 2011
+EW$ZEIT[EW$ZEIT == 201212] <- 2012
+EW$ZEIT[EW$ZEIT == 201312] <- 2013
+str(EW)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- b.) Wohndauer ----
+#~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+WHNDAUER_files <- dir(path="EW_Wohndauer_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/EW_Wohndauer_-LOR-/")
+WHNDAUER <- lapply(WHNDAUER_files, read.table, header = TRUE, sep=";",fill=TRUE,
+                   dec=",", stringsAsFactors =F, colClasses=c(RAUMID="factor"))
+WHNDAUER <- do.call("rbind", WHNDAUER) # aus Liste von data.frames einen long Datensatz machen
+
+WHNDAUER <- WHNDAUER[WHNDAUER$RAUMID!="",] # 2 leere Zeilen löschen
+WHNDAUER$RAUMID <- factor(WHNDAUER$RAUMID) # leeres Level "" für RAUMID droppen
+str(WHNDAUER)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- c.) Wohnlage -----
+#~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+WHNLAGE_files <- dir(path="EW_Wohnlage_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/EW_Wohnlage_-LOR-/")
+WHNLAGE <- lapply(WHNLAGE_files, read.table, header = TRUE, sep=";",fill=TRUE,
+                  dec=",", stringsAsFactors =F, colClasses=c(RAUMID="factor"))
+names(WHNLAGE[[4]]) <- names(WHNLAGE[[5]])
+WHNLAGE <- lapply(WHNLAGE, function(x) {names(x) <- toupper(names(x))
+                                              x}) # Variablennamen vereinheitlichen (alle upper case)
+WHNLAGE <- do.call("rbind", WHNLAGE) # aus Liste von data.frames einen long Datensatz machen
+WHNLAGE$WLEINFOL <- as.numeric(WHNLAGE$WLEINFOL)
+WHNLAGE$WLEINFML <- as.numeric(WHNLAGE$WLEINFML)
+WHNLAGE$WLMITOL  <- as.numeric(WHNLAGE$WLMITOL)
+WHNLAGE$WLMITML  <- as.numeric(WHNLAGE$WLMITML)
+WHNLAGE$WLGUTOL  <- as.numeric(WHNLAGE$WLGUTOL)
+WHNLAGE$WLGUTML  <- as.numeric(WHNLAGE$WLGUTML)
+WHNLAGE$WLNZORD  <- as.numeric(WHNLAGE$WLNZORD)
+WHNLAGE$ZEIT[WHNLAGE$ZEIT == 200712] <- 2007
+WHNLAGE$ZEIT[WHNLAGE$ZEIT == 200812] <- 2008
+WHNLAGE$ZEIT[WHNLAGE$ZEIT == 200912] <- 2009
+WHNLAGE$ZEIT[WHNLAGE$ZEIT == 201012] <- 2010
+WHNLAGE$ZEIT[WHNLAGE$ZEIT == 201112] <- 2011
+WHNLAGE$ZEIT[WHNLAGE$ZEIT == 201212] <- 2012
+WHNLAGE$ZEIT[WHNLAGE$ZEIT == 201312] <- 2013
+#View(WHNLAGE)
+#str(WHNLAGE)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- d.) Ausländer und Alter ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+ALTERAUSLAENDER_files <- dir(path="EW_Alter_Auslaender_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/EW_Alter_Auslaender_-LOR-/")
+ALTERAUSLAENDER <- lapply(ALTERAUSLAENDER_files, read.table, header = TRUE, sep=";",fill=TRUE,
+                          dec=",", stringsAsFactors =F, colClasses=c(RAUMID="factor"))
+ALTERAUSLAENDER <- do.call("rbind", ALTERAUSLAENDER) # aus Liste von data.frames einen long Datensatz machen
+ALTERAUSLAENDER$ZEIT[ALTERAUSLAENDER$ZEIT == 200712] <- 2007
+ALTERAUSLAENDER$ZEIT[ALTERAUSLAENDER$ZEIT == 200812] <- 2008
+ALTERAUSLAENDER$ZEIT[ALTERAUSLAENDER$ZEIT == 200912] <- 2009
+ALTERAUSLAENDER$ZEIT[ALTERAUSLAENDER$ZEIT == 201012] <- 2010
+ALTERAUSLAENDER$ZEIT[ALTERAUSLAENDER$ZEIT == 201112] <- 2011
+ALTERAUSLAENDER$ZEIT[ALTERAUSLAENDER$ZEIT == 201212] <- 2012
+ALTERAUSLAENDER$ZEIT[ALTERAUSLAENDER$ZEIT == 201312] <- 2013
+#View(ALTERAUSLAENDER)
+#str(ALTERAUSLAENDER)
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- e.) Migrationshintergrund E (Alter) -----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+MIGHINTERE_files <- dir(path="EW_Migrationshintergrund_E-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/EW_Migrationshintergrund_E-LOR-/")
+MIGHINTERE <- lapply(MIGHINTERE_files, read.table, header = TRUE, sep=";",fill=TRUE,
+                     dec=",", stringsAsFactors =F, colClasses=c(RAUMID="factor"))
+
+MIGHINTERE <- do.call("rbind", MIGHINTERE) # aus Liste von data.frames einen long Datensatz machen
+MIGHINTERE$ZEIT[MIGHINTERE$ZEIT == 200712] <- 2007
+MIGHINTERE$ZEIT[MIGHINTERE$ZEIT == 200812] <- 2008
+MIGHINTERE$ZEIT[MIGHINTERE$ZEIT == 200912] <- 2009
+MIGHINTERE$ZEIT[MIGHINTERE$ZEIT == 201012] <- 2010
+MIGHINTERE$ZEIT[MIGHINTERE$ZEIT == 201112] <- 2011
+MIGHINTERE$ZEIT[MIGHINTERE$ZEIT == 201212] <- 2012
+MIGHINTERE$ZEIT[MIGHINTERE$ZEIT == 201312] <- 2013
+#View(MIGHINTERE)
+str(MIGHINTERE)
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- f.) Migrationshintergrund H ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+MIGHINTERH_files <- dir(path="EW_Migrationshintergrund_H-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/EW_Migrationshintergrund_H-LOR-/")
+MIGHINTERH <- lapply(MIGHINTERH_files, read.table, header = TRUE, sep=";",fill=TRUE,
+                    dec=",", stringsAsFactors =F, colClasses=c(RAUMID="factor"))
+MIGHINTERH[[7]][,10] <- NA # für 2014 gibt es nur EU28 und nicht EU27
+colnames(MIGHINTERH[[7]])[10] <- "HK_EU27"
+MIGHINTERH <- do.call("rbind", MIGHINTERH) # aus Liste von data.frames einen long Datensatz machen
+MIGHINTERH$ZEIT[MIGHINTERH$ZEIT == 200712] <- 2007
+MIGHINTERH$ZEIT[MIGHINTERH$ZEIT == 200812] <- 2008
+MIGHINTERH$ZEIT[MIGHINTERH$ZEIT == 200912] <- 2009
+MIGHINTERH$ZEIT[MIGHINTERH$ZEIT == 201012] <- 2010
+MIGHINTERH$ZEIT[MIGHINTERH$ZEIT == 201112] <- 2011
+MIGHINTERH$ZEIT[MIGHINTERH$ZEIT == 201212] <- 2012
+MIGHINTERH$ZEIT[MIGHINTERH$ZEIT == 201312] <- 2013
+#View(MIGHINTERH)
+#str(MIGHINTERH)
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- g.) Monitoring SozStadtentwicklung ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+MONITORING_files <- dir(path="MonitoringSozStadtEnt_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/MonitoringSozStadtEnt_-LOR-/")
+MONITORING <- lapply(MONITORING_files,   read.table, header = TRUE, sep=",",fill=TRUE,
+                     dec=",", stringsAsFactors =F, colClasses=c(RAUMID="factor"))
+MONITORING <- do.call("rbind", MONITORING) # aus Liste von data.frames einen long Datensatz machen
+# hier stimmen die Jahreszahlen bereits
+# Es gab aber eine Änderung der LOR-Einteilung im Bezirk Reinickendorf (Schlüsseltabelle Stand: März 2009)
+# Die Änderungen werden nun gemäss dem Mitteilungs PDF des Amtes für Statistik umgesetzt
+MONITORING$RAUMID[MONITORING$RAUMID == "12103015"] <- "12103115"
+MONITORING$RAUMID[MONITORING$RAUMID == "12103016"] <- "12103116"
+MONITORING$RAUMID[MONITORING$RAUMID == "12103017"] <- "12103117"
+MONITORING$RAUMID[MONITORING$RAUMID == "12103018"] <- "12103218"
+MONITORING$RAUMID[MONITORING$RAUMID == "12103019"] <- "12103219"
+MONITORING$RAUMID[MONITORING$RAUMID == "12103020"] <- "12103220"
+MONITORING$RAUMID[MONITORING$RAUMID == "12214121"] <- "12214421"
+MONITORING$RAUMID[MONITORING$RAUMID == "12214122"] <- "12214422"
+MONITORING$RAUMID[MONITORING$RAUMID == "12214123"] <- "12214423"
+MONITORING$RAUMID[MONITORING$RAUMID == "12214124"] <- "12214424"
+MONITORING$RAUMID[MONITORING$RAUMID == "12214127"] <- "12214527"
+MONITORING$RAUMID[MONITORING$RAUMID == "12214128"] <- "12214528"
+MONITORING$RAUMID[MONITORING$RAUMID == "12302007"] <- "12302107"
+MONITORING$RAUMID[MONITORING$RAUMID == "12302008"] <- "12302108"
+MONITORING$RAUMID[MONITORING$RAUMID == "12302009"] <- "12302109"
+MONITORING$RAUMID[MONITORING$RAUMID == "12302010"] <- "12302110"
+MONITORING$RAUMID[MONITORING$RAUMID == "12302011"] <- "12302211"
+MONITORING$RAUMID[MONITORING$RAUMID == "12302012"] <- "12302212"
+MONITORING$RAUMID <- factor(MONITORING$RAUMID)
+MONITORING$GEBIET <- factor(MONITORING$GEBIET)
+#View(MONITORING)
+#str(MONITORING)
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ----- h.) Kontext Indikatoren -----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+KONTEXTIND_files <- dir(path="KontextIndikatoren_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/KontextIndikatoren_-LOR-/")
+KONTEXTIND <- lapply(KONTEXTIND_files, read.table, header = TRUE, sep=";",fill=TRUE,
+                     dec=",", stringsAsFactors=F, colClasses=c(RAUMID="factor"))
+KONTEXTIND <- do.call("rbind", KONTEXTIND) # aus Liste von data.frames einen long Datensatz machen
+str(KONTEXTIND)
+#View(KONTEXTIND)
+#names(KONTEXTIND)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ----- i.) ImmoScout Mieten, Whg Kauf Preise , Haus Kauf Preise -----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/ImmoScout_-ISOT-/")
+ISmieten        <- read.table(file = "ImmoScout_Mieten.csv", header = TRUE, sep=",", fill=TRUE, 
+                              dec=",", na.strings="NA", stringsAsFactors=F)
+colnames(ISmieten)  <- c("Bezirk","BGID","2007","2008","2009","2010","2011","2012","2013")
+ISmieten <-  melt(data = ISmieten, id.vars=c("Bezirk","BGID"), 
+                  variable.name = "Zeit", 
+                  value.name= "ISmiete",
+                  na.rm= FALSE)
+#View(ISmieten)
+
+ISwhgpreise     <- read.table(file = "ImmoScout_WhgKauf.csv", header = TRUE, sep=",", fill=TRUE,
+                              dec=",", na.strings="NA", stringsAsFactors=F)
+colnames(ISwhgpreise)  <- c("Bezirk","BGID","2007","2008","2009","2010","2011","2012","2013")
+ISwhgpreise <-  melt(data = ISwhgpreise, id.vars=c("Bezirk","BGID"), 
+                  variable.name = "Zeit", 
+                  value.name= "ISwhgpreis",
+                  na.rm= FALSE)
+#View(ISwhgpreise)
+
+IShauspreise    <- read.table(file = "ImmoScout_HausKauf.csv", header = TRUE, sep=",", fill=TRUE,
+                              dec=",", na.strings="NA", stringsAsFactors=F)
+colnames(IShauspreise)  <- c("Bezirk","BGID","2007","2008","2009","2010","2011","2012","2013")
+IShauspreise <-  melt(data = IShauspreise, id.vars=c("Bezirk","BGID"), 
+                     variable.name = "Zeit", 
+                     value.name= "IShauspreis",
+                     na.rm= FALSE)
+#View(IShauspreise)
+
+# Merge all 3 datasets
+ISmieten_whgpreise <- merge(x=ISmieten, y=ISwhgpreise, all.x=T, all.y=T)
+ISdata             <- merge(x=ISmieten_whgpreise, y=IShauspreise, all.x=T, all.y=T)
+remove(ISmieten, ISwhgpreise, IShauspreise, ISmieten_whgpreise)
+#View(ISdata)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- j.) JLL JonesLangLasalle Daten ------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+JLLdataWIDE <- read.table("GSW_-PLZ-/JonesLangLasalle_Mietpreise_2004-2014_modified.csv", 
+                          header = TRUE, sep=";", fill=TRUE, dec=",",
+                      na.strings="NA", stringsAsFactors=F)
+JLLdataWIDE$PLZ <- as.factor(JLLdataWIDE$PLZ)
+JLLdata         <- reshape(JLLdataWIDE,
+                      idvar   = "PLZ",
+                      varying = names(JLLdataWIDE)[2:23],
+                      timevar = "Zeit",
+                      sep = ".",
+                      direction = "long")
+#names(JLLdataWIDE)
+#View(JLLdata)
+#str(JLLdata)
+JLLdata07_12 <- subset(JLLdata, 
+                       JLLdata$Zeit>=2007 & JLLdata$Zeit<=2012)
+JLLdata07_12$Zeit <- as.factor(JLLdata07_12$Zeit)
+#str(JLLdata08_13)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- k.) Verbraucherpreisindex ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+VPI <- read.table("Verbraucherpreisindex/Verbraucherpreisindex2004_2014.csv", 
+                          header = TRUE, sep=";", fill=TRUE, dec=".",
+                          na.strings="NA", stringsAsFactors=F)
+#str(VPI)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- l.) Binnenwanderung LOR  ------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+BINNENWAND_files <- dir(path="Binnenwanderungen_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/Binnenwanderungen_-LOR-/")
+BINNENWAND <- lapply(BINNENWAND_files, read.table, header = TRUE, sep=",",fill=TRUE,
+                     dec=",", stringsAsFactors =F, colClasses=c("factor","factor","integer"))
+colnames(BINNENWAND[[5]])[1] <- "VonLOR"
+colnames(BINNENWAND[[5]])[2] <- "NachLOR"
+colnames(BINNENWAND[[6]])[1] <- "VonLOR"
+colnames(BINNENWAND[[6]])[2] <- "NachLOR"
+colnames(BINNENWAND[[7]])[1] <- "VonLOR"
+colnames(BINNENWAND[[7]])[2] <- "NachLOR"
+
+BINNENWAND[[1]] -> BINNENWAND.2007
+BINNENWAND[[2]] -> BINNENWAND.2008
+BINNENWAND[[3]] -> BINNENWAND.2009
+BINNENWAND[[4]] -> BINNENWAND.2010
+BINNENWAND[[5]] -> BINNENWAND.2011
+BINNENWAND[[6]] -> BINNENWAND.2012
+BINNENWAND[[7]] -> BINNENWAND.2013
+
+colnames(BINNENWAND.2007)[3] <- "BinnenWand.2007"
+colnames(BINNENWAND.2008)[3] <- "BinnenWand.2008"
+colnames(BINNENWAND.2009)[3] <- "BinnenWand.2009"
+colnames(BINNENWAND.2010)[3] <- "BinnenWand.2010"
+colnames(BINNENWAND.2011)[3] <- "BinnenWand.2011"
+colnames(BINNENWAND.2012)[3] <- "BinnenWand.2012"
+colnames(BINNENWAND.2013)[3] <- "BinnenWand.2013"
+  
+ODdf <- data.frame(seq(length(levels(EW$RAUMID))*length(levels(EW$RAUMID))),
+                   rep(levels(EW$RAUMID), each=length(levels(EW$RAUMID))),
+                   rep(levels(EW$RAUMID), times=length(levels(EW$RAUMID))))
+colnames(ODdf) <- c("dyad","VonLOR","NachLOR")
+#View(ODdf)
+
+setdiff(levels(ODdf$VonLOR),levels(BINNENWAND.2007$VonLOR))
+
+# ----- i.     Binnenwanderungen 2007 -----
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12103016")] <- "12103116"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12103017")] <- "12103117"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12103018")] <- "12103218"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12103019")] <- "12103219"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12103020")] <- "12103220"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12214121")] <- "12214421"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12214122")] <- "12214422"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12214123")] <- "12214423"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12214124")] <- "12214424"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12214127")] <- "12214527"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12214128")] <- "12214528"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12302007")] <- "12302107"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12302008")] <- "12302108"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12302009")] <- "12302109"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12302010")] <- "12302110"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12302011")] <- "12302211"
+levels(BINNENWAND.2007$VonLOR)[which(levels(BINNENWAND.2007$VonLOR) == "12302012")] <- "12302212"
+
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12103016")] <- "12103116"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12103017")] <- "12103117"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12103018")] <- "12103218"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12103019")] <- "12103219"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12103020")] <- "12103220"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12214121")] <- "12214421"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12214122")] <- "12214422"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12214123")] <- "12214423"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12214124")] <- "12214424"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12214127")] <- "12214527"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12214128")] <- "12214528"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12302007")] <- "12302107"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12302008")] <- "12302108"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12302009")] <- "12302109"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12302010")] <- "12302110"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12302011")] <- "12302211"
+levels(BINNENWAND.2007$NachLOR)[which(levels(BINNENWAND.2007$NachLOR) == "12302012")] <- "12302212"
+
+#BINNENWAND.2007$VonLOR  <- factor(BINNENWAND.2007$VonLOR)
+#BINNENWAND.2007$NachLOR <- factor(BINNENWAND.2007$NachLOR)
+
+
+# ----- ii.    Binnenwanderungen 2008 -----
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12103016")] <- "12103116"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12103017")] <- "12103117"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12103018")] <- "12103218"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12103019")] <- "12103219"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12103020")] <- "12103220"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12214121")] <- "12214421"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12214122")] <- "12214422"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12214123")] <- "12214423"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12214124")] <- "12214424"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12214127")] <- "12214527"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12214128")] <- "12214528"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12302007")] <- "12302107"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12302008")] <- "12302108"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12302009")] <- "12302109"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12302010")] <- "12302110"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12302011")] <- "12302211"
+levels(BINNENWAND.2008$VonLOR)[which(levels(BINNENWAND.2008$VonLOR) == "12302012")] <- "12302212"
+
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12103016")] <- "12103116"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12103017")] <- "12103117"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12103018")] <- "12103218"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12103019")] <- "12103219"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12103020")] <- "12103220"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12214121")] <- "12214421"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12214122")] <- "12214422"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12214123")] <- "12214423"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12214124")] <- "12214424"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12214127")] <- "12214527"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12214128")] <- "12214528"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12302007")] <- "12302107"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12302008")] <- "12302108"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12302009")] <- "12302109"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12302010")] <- "12302110"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12302011")] <- "12302211"
+levels(BINNENWAND.2008$NachLOR)[which(levels(BINNENWAND.2008$NachLOR) == "12302012")] <- "12302212"
+
+
+
+# ----- iii.    Binnenwanderungen 2009 -----
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12103016")] <- "12103116"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12103017")] <- "12103117"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12103018")] <- "12103218"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12103019")] <- "12103219"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12103020")] <- "12103220"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12214121")] <- "12214421"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12214122")] <- "12214422"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12214123")] <- "12214423"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12214124")] <- "12214424"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12214127")] <- "12214527"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12214128")] <- "12214528"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12302007")] <- "12302107"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12302008")] <- "12302108"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12302009")] <- "12302109"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12302010")] <- "12302110"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12302011")] <- "12302211"
+levels(BINNENWAND.2009$VonLOR)[which(levels(BINNENWAND.2009$VonLOR) == "12302012")] <- "12302212"
+
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12103015")] <- "12103115"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12103016")] <- "12103116"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12103017")] <- "12103117"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12103018")] <- "12103218"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12103019")] <- "12103219"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12103020")] <- "12103220"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12214121")] <- "12214421"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12214122")] <- "12214422"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12214123")] <- "12214423"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12214124")] <- "12214424"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12214127")] <- "12214527"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12214128")] <- "12214528"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12302007")] <- "12302107"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12302008")] <- "12302108"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12302009")] <- "12302109"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12302010")] <- "12302110"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12302011")] <- "12302211"
+levels(BINNENWAND.2009$NachLOR)[which(levels(BINNENWAND.2009$NachLOR) == "12302012")] <- "12302212"
+
+#BINNENWANDnew <- lapply(BINNENWAND, function(x) {cast(data = x, VonLOR ~ NachLOR)
+#                                               x})
+#BINNENWANDnew <- lapply(BINNENWAND, function(x) {dcast(data = x, VonLOR ~ NachLOR)
+#                                               x})
+
+
+# ------- vi.    Merge Binnenwanderungen mit ODdf ----------
+
+setdiff(levels(ODdf$VonLOR),levels(BINNENWAND.2008$VonLOR))
+setdiff(levels(BINNENWAND.2008$VonLOR),levels(ODdf$VonLOR))
+
+source("/home/dao/Desktop/MasterArbeit/R_files/functions/merge_with_order_FUNCTION.R")
+
+ODdf_v1 <- merge.with.order(ODdf,
+                            BINNENWAND.2007,
+                            by=c("VonLOR","NachLOR"),
+                            all.x=T,
+                            all.y=F,
+                            sort=F,
+                            keep_order=1)
+
+ODdf_v2 <- merge.with.order(ODdf_v1,
+                            BINNENWAND.2008,
+                            by=c("VonLOR","NachLOR"),
+                            all.x=T,
+                            all.y=F,
+                            sort=F,
+                            keep_order=1)
+
+ODdf_v3 <- merge.with.order(ODdf_v2,
+                            BINNENWAND.2009,
+                            by=c("VonLOR","NachLOR"),
+                            all.x=T,
+                            all.y=F,
+                            sort=F,
+                            keep_order=1)
+
+ODdf_v4 <- merge.with.order(ODdf_v3,
+                            BINNENWAND.2010,
+                            by=c("VonLOR","NachLOR"),
+                            all.x=T,
+                            all.y=F,
+                            sort=F,
+                            keep_order=1)
+
+ODdf_v5 <- merge.with.order(ODdf_v4,
+                            BINNENWAND.2011,
+                            by=c("VonLOR","NachLOR"),
+                            all.x=T,
+                            all.y=F,
+                            sort=F,
+                            keep_order=1)
+
+ODdf_v6 <- merge.with.order(ODdf_v5,
+                            BINNENWAND.2012,
+                            by=c("VonLOR","NachLOR"),
+                            all.x=T,
+                            all.y=F,
+                            sort=F,
+                            keep_order=1)
+
+ODdf_v7 <- merge.with.order(ODdf_v6,
+                            BINNENWAND.2013,
+                            by=c("VonLOR","NachLOR"),
+                            all.x=T,
+                            all.y=F,
+                            sort=F,
+                            keep_order=1)
+
+remove(ODdf_v1, ODdf_v2, ODdf_v3, ODdf_v4, ODdf_v5, ODdf_v6)
+
+ODdf <- ODdf_v7
+ODdf[is.na(ODdf)]   <- 0
+ODdf$BinnenWand.Sum <-    (ODdf$BinnenWand.2007+
+                           ODdf$BinnenWand.2008+
+                           ODdf$BinnenWand.2009+
+                           ODdf$BinnenWand.2010+
+                           ODdf$BinnenWand.2011+
+                           ODdf$BinnenWand.2012+
+                           ODdf$BinnenWand.2013) 
+
+ODdf4FORTZUEGEdf <- ODdf[order(ODdf[,"VonLOR"]), ] 
+FORTZUEGEdf <- ddply(ODdf4FORTZUEGEdf, "VonLOR", summarise, 
+                     Fortzuege.2007 = sum(BinnenWand.2007),
+                     Fortzuege.2008 = sum(BinnenWand.2008),
+                     Fortzuege.2009 = sum(BinnenWand.2009),
+                     Fortzuege.2010 = sum(BinnenWand.2010),
+                     Fortzuege.2011 = sum(BinnenWand.2011),
+                     Fortzuege.2012 = sum(BinnenWand.2012),
+                     Fortzuege      = sum(BinnenWand.Sum))
+#plot(density(FORTZUEGEdf$Fortzuege))
+#hist(FORTZUEGEdf$Fortzuege, breaks=100)
+
+ODdf4ZUZUEGEdf <- ODdf[order(ODdf[,"NachLOR"]), ] 
+ZUZUEGEdf <- ddply(ODdf4ZUZUEGEdf, "NachLOR", summarise,
+                   Zuzuege.2007 = sum(BinnenWand.2007),
+                   Zuzuege.2008 = sum(BinnenWand.2008),
+                   Zuzuege.2009 = sum(BinnenWand.2009),
+                   Zuzuege.2010 = sum(BinnenWand.2010),
+                   Zuzuege.2011 = sum(BinnenWand.2011),
+                   Zuzuege.2012 = sum(BinnenWand.2012),
+                   Zuzuege = sum(BinnenWand.Sum))
+#plot(density(ZUZUEGEdf$Zuzuege))
+#hist(ZUZUEGEdf$Zuzuege, breaks=100)
+
+colnames(FORTZUEGEdf)[1] <- "RAUMID"
+colnames(ZUZUEGEdf)[1] <- "RAUMID"
+
+source("/home/dao/Desktop/MasterArbeit/R_files/functions/merge_with_order_FUNCTION.R")
+FORTZUEGEZUZUEGEdf <- merge(FORTZUEGEdf,
+                            ZUZUEGEdf,
+                            by="RAUMID",
+                            sort=T,
+                            keep_order=1)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ----- m.) Außenwanderungen Umland LOR  -----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+AUSSENWANDU_files <- dir(path="Aussenwanderungen_Umland_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/Aussenwanderungen_Umland_-LOR-/")
+AUSSENWANDU <- lapply(AUSSENWANDU_files, read.table, header = TRUE, sep=";",fill=TRUE,
+                     dec=",", stringsAsFactors =F, colClasses=c("factor","factor","integer","integer"))
+
+AUSSENWANDU[[1]] -> AUSSENWANDU.2007
+AUSSENWANDU[[2]] -> AUSSENWANDU.2008
+AUSSENWANDU[[3]] -> AUSSENWANDU.2009
+AUSSENWANDU[[4]] -> AUSSENWANDU.2010
+AUSSENWANDU[[5]] -> AUSSENWANDU.2011
+AUSSENWANDU[[6]] -> AUSSENWANDU.2012
+
+# i.) Änderung der LOR-Einteilung ----
+# Es gab aber eine Änderung der LOR-Einteilung im Bezirk Reinickendorf (Schlüsseltabelle Stand: März 2009)
+# Die Änderungen werden nun gemäss dem Mitteilungs PDF des Amtes für Statistik umgesetzt
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12103015")] <- "12103115"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12103016")] <- "12103116"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12103017")] <- "12103117"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12103018")] <- "12103218"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12103019")] <- "12103219"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12103020")] <- "12103220"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12214121")] <- "12214421"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12214122")] <- "12214422"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12214123")] <- "12214423"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12214124")] <- "12214424"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12214127")] <- "12214527"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12214128")] <- "12214528"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12302007")] <- "12302107"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12302008")] <- "12302108"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12302009")] <- "12302109"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12302010")] <- "12302110"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12302011")] <- "12302211"
+levels(AUSSENWANDU.2007$RAUMID)[which(levels(AUSSENWANDU.2007$RAUMID) == "12302012")] <- "12302212"
+
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12103015")] <- "12103115"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12103016")] <- "12103116"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12103017")] <- "12103117"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12103018")] <- "12103218"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12103019")] <- "12103219"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12103020")] <- "12103220"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12214121")] <- "12214421"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12214122")] <- "12214422"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12214123")] <- "12214423"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12214124")] <- "12214424"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12214127")] <- "12214527"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12214128")] <- "12214528"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12302008")] <- "12302107"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12302008")] <- "12302108"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12302009")] <- "12302109"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12302010")] <- "12302110"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12302011")] <- "12302211"
+levels(AUSSENWANDU.2008$RAUMID)[which(levels(AUSSENWANDU.2008$RAUMID) == "12302012")] <- "12302212"
+
+# ii.) Fehlende LOR Beobachtungen generieren -----
+# --> LORs mit 0 Aussenwanderungen fehlen nämlich in den Datensätzen
+RAUMIDdf <- data.frame(as.factor(levels(MONITORING$RAUMID)))
+colnames(RAUMIDdf) <- "RAUMID"
+
+source("/home/dao/Desktop/MasterArbeit/R_files/functions/merge_with_order_FUNCTION.R")
+AUSSENWANDU.2007 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDU.2007,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDU.2008 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDU.2008,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     #all.y=T, auskommentiert, weil es sonst hier ein level zu viel aus AUSSENWANDU.2008 entsteht
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDU.2009 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDU.2009,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDU.2010 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDU.2010,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDU.2011 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDU.2011,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDU.2012 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDU.2012,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+
+# iii.) Daten säubern und WIDE erstellen -----
+AUSSENWANDU.2007$ZEIT[is.na(AUSSENWANDU.2007$ZEIT)] <- "2007"
+AUSSENWANDU.2008$ZEIT[is.na(AUSSENWANDU.2008$ZEIT)] <- "2008"
+AUSSENWANDU.2009$ZEIT[is.na(AUSSENWANDU.2009$ZEIT)] <- "2009"
+AUSSENWANDU.2010$ZEIT[is.na(AUSSENWANDU.2010$ZEIT)] <- "2010"
+AUSSENWANDU.2011$ZEIT[is.na(AUSSENWANDU.2011$ZEIT)] <- "2011"
+AUSSENWANDU.2012$ZEIT[is.na(AUSSENWANDU.2012$ZEIT)] <- "2012"
+
+AUSSENWANDU.2007[is.na(AUSSENWANDU.2007)] <- 0
+AUSSENWANDU.2008[is.na(AUSSENWANDU.2008)] <- 0
+AUSSENWANDU.2009[is.na(AUSSENWANDU.2009)] <- 0
+AUSSENWANDU.2010[is.na(AUSSENWANDU.2010)] <- 0
+AUSSENWANDU.2011[is.na(AUSSENWANDU.2011)] <- 0
+AUSSENWANDU.2012[is.na(AUSSENWANDU.2012)] <- 0
+
+colnames(AUSSENWANDU.2007)[3:4] <- c("ZuzuegeU.2007","FortzuegeU.2007")
+colnames(AUSSENWANDU.2008)[3:4] <- c("ZuzuegeU.2008","FortzuegeU.2008")
+colnames(AUSSENWANDU.2009)[3:4] <- c("ZuzuegeU.2009","FortzuegeU.2009")
+colnames(AUSSENWANDU.2010)[3:4] <- c("ZuzuegeU.2010","FortzuegeU.2010")
+colnames(AUSSENWANDU.2011)[3:4] <- c("ZuzuegeU.2011","FortzuegeU.2011")
+colnames(AUSSENWANDU.2012)[3:4] <- c("ZuzuegeU.2012","FortzuegeU.2012")
+
+AUSSENWANDUdf <- data.frame(AUSSENWANDU.2007[,c(1,3,4)],AUSSENWANDU.2008[,3:4],AUSSENWANDU.2009[,3:4],
+                            AUSSENWANDU.2010[,3:4],AUSSENWANDU.2011[,3:4],AUSSENWANDU.2012[,3:4])
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ----- n.) Außenwanderungen Inland & Ausland LOR  -----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data")
+AUSSENWANDIA_files <- dir(path="Aussenwanderungen_InAusland_-LOR-/", pattern = glob2rx("*.csv"))
+setwd(dir = "/home/dao/Desktop/MasterArbeit/R_data/Aussenwanderungen_InAusland_-LOR-/")
+AUSSENWANDIA <- lapply(AUSSENWANDIA_files, read.table, header = TRUE, sep=",",fill=TRUE,
+                      dec=",", stringsAsFactors =F, colClasses=c("factor","factor","integer",
+                                                                 "integer","integer","integer"))
+
+AUSSENWANDIA[[1]] -> AUSSENWANDIA.2007
+AUSSENWANDIA[[2]] -> AUSSENWANDIA.2008
+AUSSENWANDIA[[3]] -> AUSSENWANDIA.2009
+AUSSENWANDIA[[4]] -> AUSSENWANDIA.2010
+AUSSENWANDIA[[5]] -> AUSSENWANDIA.2011
+AUSSENWANDIA[[6]] -> AUSSENWANDIA.2012
+
+# i.) Änderung der LOR-Einteilung ----
+# Es gab aber eine Änderung der LOR-Einteilung im Bezirk Reinickendorf (Schlüsseltabelle Stand: März 2009)
+# Die Änderungen werden nun gemäss dem Mitteilungs PDF des Amtes für Statistik umgesetzt
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12103015")] <- "12103115"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12103016")] <- "12103116"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12103017")] <- "12103117"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12103018")] <- "12103218"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12103019")] <- "12103219"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12103020")] <- "12103220"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12214121")] <- "12214421"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12214122")] <- "12214422"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12214123")] <- "12214423"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12214124")] <- "12214424"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12214127")] <- "12214527"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12214128")] <- "12214528"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12302007")] <- "12302107"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12302008")] <- "12302108"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12302009")] <- "12302109"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12302010")] <- "12302110"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12302011")] <- "12302211"
+levels(AUSSENWANDIA.2007$RAUMID)[which(levels(AUSSENWANDIA.2007$RAUMID) == "12302012")] <- "12302212"
+
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12103015")] <- "12103115"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12103016")] <- "12103116"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12103017")] <- "12103117"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12103018")] <- "12103218"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12103019")] <- "12103219"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12103020")] <- "12103220"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12214121")] <- "12214421"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12214122")] <- "12214422"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12214123")] <- "12214423"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12214124")] <- "12214424"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12214127")] <- "12214527"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12214128")] <- "12214528"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12302008")] <- "12302107"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12302008")] <- "12302108"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12302009")] <- "12302109"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12302010")] <- "12302110"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12302011")] <- "12302211"
+levels(AUSSENWANDIA.2008$RAUMID)[which(levels(AUSSENWANDIA.2008$RAUMID) == "12302012")] <- "12302212"
+
+# ii.) Fehlende LOR Beobachtungen generieren -----
+# --> LORs mit 0 Aussenwanderungen fehlen nämlich in den Datensätzen
+source("/home/dao/Desktop/MasterArbeit/R_files/functions/merge_with_order_FUNCTION.R")
+AUSSENWANDIA.2007 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDIA.2007,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDIA.2008 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDIA.2008,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     #all.y=T, auskommentiert, weil es sonst hier ein level zu viel aus AUSSENWANDIA.2008 entsteht
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDIA.2009 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDIA.2009,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDIA.2010 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDIA.2010,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDIA.2011 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDIA.2011,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+AUSSENWANDIA.2012 <- merge.with.order(x=RAUMIDdf, 
+                                     y=AUSSENWANDIA.2012,
+                                     by="RAUMID",
+                                     all.x=T,
+                                     all.y=T,
+                                     sort=T,
+                                     keep_order=1)
+
+# iii.) Daten säubern und WIDE erstellen -----
+AUSSENWANDIA.2007$ZEIT[is.na(AUSSENWANDIA.2007$ZEIT)] <- "2007"
+AUSSENWANDIA.2008$ZEIT[is.na(AUSSENWANDIA.2008$ZEIT)] <- "2008"
+AUSSENWANDIA.2009$ZEIT[is.na(AUSSENWANDIA.2009$ZEIT)] <- "2009"
+AUSSENWANDIA.2010$ZEIT[is.na(AUSSENWANDIA.2010$ZEIT)] <- "2010"
+AUSSENWANDIA.2011$ZEIT[is.na(AUSSENWANDIA.2011$ZEIT)] <- "2011"
+AUSSENWANDIA.2012$ZEIT[is.na(AUSSENWANDIA.2012$ZEIT)] <- "2012"
+
+AUSSENWANDIA.2007[is.na(AUSSENWANDIA.2007)] <- 0
+AUSSENWANDIA.2008[is.na(AUSSENWANDIA.2008)] <- 0
+AUSSENWANDIA.2009[is.na(AUSSENWANDIA.2009)] <- 0
+AUSSENWANDIA.2010[is.na(AUSSENWANDIA.2010)] <- 0
+AUSSENWANDIA.2011[is.na(AUSSENWANDIA.2011)] <- 0
+AUSSENWANDIA.2012[is.na(AUSSENWANDIA.2012)] <- 0
+
+colnames(AUSSENWANDIA.2007)[3:6] <- c("ZuzuegeA.2007","ZuzuegeD.2007","FortzuegeA.2007","FortzuegeD.2007")
+colnames(AUSSENWANDIA.2008)[3:6] <- c("ZuzuegeA.2008","ZuzuegeD.2008","FortzuegeA.2008","FortzuegeD.2008")
+colnames(AUSSENWANDIA.2009)[3:6] <- c("ZuzuegeA.2009","ZuzuegeD.2009","FortzuegeA.2009","FortzuegeD.2009")
+colnames(AUSSENWANDIA.2010)[3:6] <- c("ZuzuegeA.2010","ZuzuegeD.2010","FortzuegeA.2010","FortzuegeD.2010")
+colnames(AUSSENWANDIA.2011)[3:6] <- c("ZuzuegeA.2011","ZuzuegeD.2011","FortzuegeA.2011","FortzuegeD.2011")
+colnames(AUSSENWANDIA.2012)[3:6] <- c("ZuzuegeA.2012","ZuzuegeD.2012","FortzuegeA.2012","FortzuegeD.2012")
+
+AUSSENWANDIAdf <- data.frame(AUSSENWANDIA.2007[,c(1,3:6)],AUSSENWANDIA.2008[,3:6],AUSSENWANDIA.2009[,3:6],
+                             AUSSENWANDIA.2010[,3:6],AUSSENWANDIA.2011[,3:6],AUSSENWANDIA.2012[,3:6])
+
+# iv.) Aussenwanderungen Umland, D und Ausland WIDE zusammenfassen -----
+AUSSENWANDdf <- data.frame(AUSSENWANDUdf,AUSSENWANDIAdf[,-1])
+AUSSENWANDdf <- AUSSENWANDdf[c("RAUMID",
+                               "ZuzuegeU.2007","ZuzuegeU.2008","ZuzuegeU.2009","ZuzuegeU.2010","ZuzuegeU.2011","ZuzuegeU.2012",
+                               "ZuzuegeD.2007","ZuzuegeD.2008","ZuzuegeD.2009","ZuzuegeD.2010","ZuzuegeD.2011","ZuzuegeD.2012",
+                               "ZuzuegeA.2007","ZuzuegeA.2008","ZuzuegeA.2009","ZuzuegeA.2010","ZuzuegeA.2011","ZuzuegeA.2012",
+                               "FortzuegeU.2007","FortzuegeU.2008","FortzuegeU.2009","FortzuegeU.2010","FortzuegeU.2011","FortzuegeU.2012",
+                               "FortzuegeD.2007","FortzuegeD.2008","FortzuegeD.2009","FortzuegeD.2010","FortzuegeD.2011","FortzuegeD.2012",
+                               "FortzuegeA.2007","FortzuegeA.2008","FortzuegeA.2009","FortzuegeA.2010","FortzuegeA.2011","FortzuegeA.2012")]
+remove(AUSSENWANDUdf,AUSSENWANDIAdf)
+
+#§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# II.) Shape Files einlesen ------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- a.) ImmoScout Ortsteile -----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd("/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten")
+IS       <- readOGR(dsn="ImmoScout", layer="Berlin_BGID_projected")
+zielCRS  <- IS@proj4string
+# EPSG 3068 SOLDNER BERLIN
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- b.) Postleitzahlen PLZ ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd("/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten")
+PLZ1     <- readOGR(dsn="PLZ_GS/RBS_OD_PLZ_01_2014/", layer="RBS_OD_PLZ_1312", encoding = "UTF-8")
+proj4string(PLZ1)    <- CRS("+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs") # EPSG:25833
+PLZ    <- spTransform(PLZ1, zielCRS)
+#plot(PLZ)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- c.) Stat. Landesamt LORs und Bezirke ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd("/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten")
+BZK1     <- readOGR(dsn="Bezirke_GS/", layer="RBS_OD_BEZ_1412")
+BZK1@proj4string
+BZK      <- spTransform(BZK1, zielCRS)
+
+LORkorrekt1     <- readOGR(dsn="LOR_Korrekt_GS/", layer="RBS_OD_LOR_1412")
+LORkorrekt1@proj4string
+LOR             <- spTransform(LORkorrekt1, zielCRS)
+LORslim         <- LOR
+
+# - - - - alte shape files, mit denen es projektionsprobleme gab - - - - - - - - - - - - - - - - - -
+#LOR1     <- readOGR(dsn="LOR/LORneu/LOR_SHP_EPSG_3068/", layer="Planungsraum_EPSG_3068")
+#PGR1     <- readOGR(dsn="LOR/LORneu/LOR_SHP_EPSG_3068/", layer="Prognoseraum_EPSG_3068")
+#BZR1     <- readOGR(dsn="LOR/LORneu/LOR_SHP_EPSG_3068/", layer="Bezirksregion_EPSG_3068")
+#proj4string(LOR1) <- CRS("+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 
+#                         +x_0=40000 +y_0=10000 +ellps=bessel +datum=potsdam +units=m +no_defs ")
+#proj4string(PGR1) <- CRS("+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 
+#                         +x_0=40000 +y_0=10000 +ellps=bessel +datum=potsdam +units=m +no_defs ")
+#proj4string(BZR1) <- CRS("+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 
+#                         +x_0=40000 +y_0=10000 +ellps=bessel +datum=potsdam +units=m +no_defs ")
+#PGR <- spTransform(PGR1, zielCRS)
+#BZR <- spTransform(BZR1, zielCRS)
+#BZK <- spTransform(BZK1, zielCRS)
+#LOR <- spTransform(LOR1, zielCRS)
+#LORslim <- LOR
+#plot(LOR)
+#plot(BZR)
+#plot(BZK)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- d.) S-Bahn Ring ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd("/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten")
+S_Bahn  <- readOGR(dsn="S_BahnRing_GS/",layer="S-Bahn-Ring_LinesAndere")
+S_Bahn@proj4string
+S_Bahn  <- spTransform(S_Bahn, zielCRS)
+#plot(BZK)
+#plot(S_Bahn, add=T, col="red", lwd=3)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- e.) Sanierungsgebiete ----
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+setwd("/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten")
+SanGebiete1                <- readOGR(dsn="Sanierungsgebiete_GS/Sanierungsgebiete_EPSG_25833/",
+                                      layer="Sanierungsgebiete_EPSG_25833")
+proj4string(SanGebiete1)   <- CRS("+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs") # EPSG:25833
+SanGebiete                 <- spTransform(SanGebiete1, zielCRS)
+
+SanGebiete@data$KLASSENNAM <- revalue(SanGebiete@data$KLASSENNAM, c("Verfahren_aufgehoben"  = "aufgehoben",
+                                                                    "Verfahren_Umfassend"   = "umfassend",
+                                                                    "Verfahren_Vereinfacht" = "vereinfacht"))
+#SanGebiete@data$KLASSENNAM
+
+colnames(SanGebiete@data) <- c("SanGebiet",
+                               "SanGebiet_NAME",
+                               "SanGebiet_KLASSE")
+
+SanGebieteNAMEN <- read.csv("Sanierungsgebiete_GS/Sanierungsgebiete_EPSG_25833/SanGebiet_NAMEN.csv", 
+                            head=F)[,1]
+SanGebiete@data$SanGebiet_NAME <- SanGebieteNAMEN
+#plot(PLZ)
+#plot(SanGebiete, col="red", add=T)
+#View(SanGebiete@data)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---- f.) Bloecke ------------------------------------------------------
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#*******************
+# Bloecke 2007
+#*******************
+
+setwd(dir="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS/")
+EW_07_raw <- read.dbf(file = "2007_EPSG3068/Sachdaten/e06_06ewdichte2007.dbf")
+head(EW_07_raw)
+bloecke07_attributes <- read.dbf(file = "2007_EPSG3068/06_06ewdichte2007_Flaechen_ORIGINAL.dbf")
+bloecke07_attributes$order <- seq(1:length(bloecke07_attributes$SCHLUESSEL))
+head(bloecke07_attributes)
+
+# Problem mit Attributsdaten; Es werden nicht alle Blöcke zugeordnet! Aber nur 5555 Einwohner
+# EW_07 <- merge(bloecke07_attributes, EW_07_raw, by="SCHLUESSEL", all.x=T, all.y=T)
+# nichtZuordenbar07 <- subset(EW_07_raw, EW_07_raw$EINWOHNER>0 & is.na(EW_07_raw$EW_PRO_HA)) # diese 38 Fälle sind das Problem
+# sum(nichtZuordenbar07$EINWOHNER) # 5555 Einwohner sind dadurch nicht zuordenbar
+# sum(EW_07$EINWOHNER, na.rm=T)
+# table(EW_07$KLASSENNAM, useNA=c("always"))
+# subset(EW_07,is.na(EW_07$KLASSENNAM))
+# subset(EW_07, EW_07$EINWOHNER>0 & (is.na(EW_07$FLAECHE_IN)))
+
+#### --> Deswegen nochmal mit all.y=FALSE
+
+EW_07 <- merge(bloecke07_attributes, EW_07_raw, by="SCHLUESSEL", all.x=T, all.y=F)
+EW_07 <- EW_07[with(EW_07, order(order)), ]
+head(EW_07)
+str(EW_07)
+
+setwd(dir="2007_EPSG3068/")
+write.dbf(EW_07, file="06_06ewdichte2007_Flaechen", factor2char = TRUE)
+
+bloecke07  <- readOGR(dsn="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS/2007_EPSG3068/", 
+                      layer="06_06ewdichte2007_Flaechen")
+proj4string(bloecke07) <- CRS("+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 
+                              +x_0=40000 +y_0=10000 +ellps=bessel +datum=potsdam +units=m +no_defs")
+bloecke07  <- spTransform(bloecke07, zielCRS)
+sum(as.numeric(bloecke07@data$EINWOHNER), na.rm=T)
+bloecke07@data$EINWOHNER[is.na(bloecke07@data$EINWOHNER)] <- 0
+bloecke07@data$EW_PRO_HA[is.na(bloecke07@data$EW_PRO_HA)] <- 0
+bloecke07 <- bloecke07[bloecke07@data$EINWOHNER>0, ] # alle Blöcke löschen, wo niemand wohnt
+bloecke07@data$order <- seq(1:length(bloecke07@data$SCHLUESSEL))
+length(bloecke07@data$SCHLUESSEL)
+#sum(as.numeric(bloecke07@data$EINWOHNER), na.rm=T)
+#str(bloecke07@data)
+#plot(bloecke07)
+#View(bloecke07@data)
+
+#*******************
+# Bloecke 2008
+#*******************
+
+setwd(dir="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS/")
+EW_08_raw <- read.dbf(file = "2008_EPSG3068/Sachdaten/06_06EWdichte2008.dbf")
+head(EW_08_raw)
+bloecke08_attributes <- read.dbf(file = "2008_EPSG3068/alt/06_06ewdichte2008.DBF")
+bloecke08_attributes$order <- seq(1:length(bloecke08_attributes$SCHLUESSEL))
+head(bloecke08_attributes)
+
+EW_08 <- merge(bloecke08_attributes, EW_08_raw, by="SCHLUESSEL", all.x=T, all.y=T)
+head(EW_08)
+length(EW_08_raw$SCHLUESSEL)
+length(bloecke08_attributes$SCHLUESSEL)
+length(EW_08$SCHLUESSEL)
+EW_08 <- EW_08[with(EW_08, order(order)), ]
+head(EW_08)
+#sum(EW_08$EINWOHNER, na.rm=T)
+setwd(dir="2008_EPSG3068/")
+write.dbf(EW_08, file="06_06ewdichte2008", factor2char = TRUE)
+
+bloecke08  <- readOGR(dsn="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS/2008_EPSG3068/", layer="06_06ewdichte2008")
+proj4string(bloecke08) <- CRS("+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 
+                              +x_0=40000 +y_0=10000 +ellps=bessel +datum=potsdam +units=m +no_defs")
+bloecke08  <- spTransform(bloecke08, zielCRS)
+bloecke08@data$EINWOHNER[is.na(bloecke08@data$EINWOHNER)] <- 0
+bloecke08@data$EW_PRO_HA[is.na(bloecke08@data$EW_PRO_HA)] <- 0
+bloecke08 <- bloecke08[bloecke08@data$EINWOHNER>0, ] # alle Blöcke löschen, wo niemand wohnt
+bloecke08@data$order <- seq(1:length(bloecke08@data$SCHLUESSEL))
+#length(bloecke08@data$SCHLUESSEL)
+#sum(as.numeric(bloecke08@data$EINWOHNER), na.rm=T)
+#str(bloecke08@data)
+#plot(bloecke08)
+#View(bloecke08@data)
+
+#*******************
+# Bloecke 2009
+#*******************
+
+setwd(dir="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS/")
+EW_09_raw <- read.dbf(file = "2009_EPSG3068/Sachdaten/s06_06EWdichte2009.DBF")
+head(EW_09_raw)
+bloecke09_attributes <- read.dbf(file = "2009_EPSG3068/alt/06_06ewdichte2009.DBF")
+bloecke09_attributes$order <- seq(1:length(bloecke09_attributes$SCHLUESSEL))
+head(bloecke09_attributes)
+
+EW_09 <- merge(bloecke09_attributes, EW_09_raw, by="SCHLUESSEL", all.x=T, all.y=T)
+length(EW_09_raw$SCHLUESSEL)
+length(bloecke09_attributes$SCHLUESSEL)
+length(EW_09$SCHLUESSEL)
+EW_09 <- EW_09[with(EW_09, order(order)), ]
+head(EW_09)
+sum(EW_09$EW_GESAMT, na.rm=T)
+write.dbf(EW_09, file="06_06ewdichte2009", factor2char = TRUE)
+
+bloecke09  <- readOGR(dsn="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS/2009_EPSG3068/", layer="06_06ewdichte2009")
+proj4string(bloecke09) <- CRS("+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 
+                              +x_0=40000 +y_0=10000 +ellps=bessel +datum=potsdam +units=m +no_defs")
+bloecke09  <- spTransform(bloecke09, zielCRS)
+bloecke09@data$EW_GESAMT[is.na(bloecke09@data$EW_GESAMT)] <- 0
+bloecke09@data$EW_PRO_HA[is.na(bloecke09@data$EW_PRO_HA)] <- 0
+bloecke09@data <- bloecke09@data[,-(3)] # leere LOR Variable löschen
+bloecke09 <- bloecke09[bloecke09@data$EW_GESAMT>0, ] # alle Blöcke löschen, wo niemand wohnt
+bloecke09@data$order <- seq(1:length(bloecke09@data$SCHLUESSEL))
+#length(bloecke09@data$SCHLUESSEL)
+#sum(as.numeric(bloecke09@data$EW2013), na.rm=T)
+#str(bloecke09@data)
+#View(bloecke09@data)
+#plot(bloecke09)
+
+#*******************
+# Bloecke 2010-2012
+#*******************
+
+setwd(dir="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS")
+EW_10_12 <- read.table(file ="EW_2010-2013.csv", header=T, sep=",")
+EW_10_12[is.na(EW_10_12)] <- 0
+write.dbf(EW_10_12, file="bloecke_EW", factor2char = TRUE)
+
+bloecke10_12  <- readOGR(dsn="/home/dao/Desktop/MasterArbeit/GentriMap/4 Geodaten/Bloecke_GS", layer="bloecke_EW")
+bloecke10_12  <- spTransform(bloecke10_12, zielCRS)
+bloecke10_12  <- bloecke10_12[bloecke10_12@data$EW2012>0 |
+                              bloecke10_12@data$EW2011>0 |
+                              bloecke10_12@data$EW2010>0, ] # alle Blöcke löschen, wo niemand wohnt
+bloecke10_12@data$SCHLUESSEL <- as.factor(substr(bloecke10_12@data$gml_id, 24,39)) # ID Variable isolieren --> SCHLUESSEL generieren
+bloecke10_12@data <- subset(bloecke10_12@data, select=-c(gml_id,spatial_na,spatial_al,spatial_ty,
+                                                         EW2013,EW_HA2013,HA2013)) # unnötige Variabeln löschen
+bloecke10_12@data <- bloecke10_12@data[c(7,1,2,3,4,5,6)] # ID Variable SCHLUESSEL im Datensatz nach ganz vorne ziehen (=zur 1.Spalte machen)
+bloecke10_12@data$order <- seq(1:length(bloecke10_12@data$SCHLUESSEL))
+#names(bloecke10_12)
+#View(bloecke10_12@data)
+#length(bloecke10_12@data$EW2013)
+#sum(as.numeric(bloecke10_12@data$EW2012), na.rm=T)
+#sum(EW_10_12$EW2012) # die beiden Summen sollten gleich sein für alle Jahre - passt!
+#str(bloecke10_12@data)
+#plot(bloecke10_12)
+#View(bloecke10_12@data)

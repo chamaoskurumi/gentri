@@ -1,0 +1,286 @@
+\Sexpr{set_parent("MASTER.Rnw")}
+
+\section{Abbildungen}\label{Anhang:Abbildungen}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.6]{figure/Mosaic-1.pdf}
+  \caption[Mosaikplot von $\Delta_{r}Miete$ und $\Delta Armut$]{Mosaikplot des Zusammenhangs von $\Delta_{r}Miete$ und $\Delta Armut$ nach gewichteten Quartilen. Die rote Zelle Q4($\Delta_{r}Miete$) / Q1($\Delta Armut$) entspricht der \textit{Kategorie} Gentri.}
+  \label{fig:Mosaic}
+\end{figure}
+
+%<<Mosaic, fig.scap='Mosaikplot des Zusammenhangs von $\\Delta_{r}Miete$ und $\\Delta Armut$', fig.cap='Mosaikplot des Zusammenhangs von $\\Delta_{r}Miete$ und $\\Delta Armut$ nach gewichteten Quartilen. Die Zelle Q4($\\Delta_{r}Miete$) / Q1($\\Delta Armut$) entspricht der \\textit{Kategorie} Gentri.', fig.pos='H', fig.lp='fig:', fig.height=3.5,crop=TRUE, fig.align='center'>>=
+%library("vcd")
+%fill_colors <- matrix(c("red", "gray", "gray","grey",
+%                       "gray", "gray", "gray","grey",
+%                       "gray", "gray", "gray","grey",
+%                       "gray", "gray", "gray","grey"), ncol = 4)
+%
+%bpDF$MietechgrQNTL <- factor(bpDF$MietechgrQNTL,levels(bpDF$MietechgrQNTL)[c(4,3,2,1)])
+%
+%levels(bpDF$valid)[levels(bpDF$valid)=="gültig"] <- "Gesamt"
+%levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="4.Quartil"] <- "4.Q"
+%levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="3.Quartil"] <- "3.Q"
+%levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="2.Quartil"] <- "2.Q"
+%levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="1.Quartil"] <- "1.Q"
+%levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="4.Quartil"] <- "4.Q"
+%levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="3.Quartil"] <- "3.Q"
+%levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="2.Quartil"] <- "2.Q"
+%levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="1.Quartil"] <- "1.Q"
+%
+%mosaicDF <- table(bpDF$MietechgrQNTL, bpDF$ArmutchgQNTL,dnn=c("Relative Mietpreisänderung","Änderung der Armutsquote"))
+%mosaic(mosaicDF, gp = gpar(fill = fill_colors, col = 0))
+%@
+
+<<Assoc, fig.cap='Assoziationsplot des Zusammenhangs von $\\Delta_{r}Miete$ und $\\Delta Armut$ nach gewichteten Quartilen. Für die \\textit{Kategorie} Gentri besteht ein hoch signifikanter Zusammenhang zwischen Mietpreissteigerung und Armutssenkung.', fig.scap='Assoziationsplot von $\\Delta_{r}Miete$ und $\\Delta Armut$', fig.lp='fig:',fig.pos='H', fig.height=3, fig.width=4, crop=TRUE, fig.align='center'>>=
+library("vcd")
+fill_colors <- matrix(c("red", "gray", "gray","grey",
+                       "gray", "gray", "gray","grey",
+                       "gray", "gray", "gray","grey",
+                       "gray", "gray", "gray","grey"), ncol = 4)
+
+bpDF$MietechgrQNTL <- factor(bpDF$MietechgrQNTL,levels(bpDF$MietechgrQNTL)[c(4,3,2,1)])
+
+levels(bpDF$valid)[levels(bpDF$valid)=="gültig"] <- "Gesamt"
+levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="4.Quartil"] <- "4.Q"
+levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="3.Quartil"] <- "3.Q"
+levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="2.Quartil"] <- "2.Q"
+levels(bpDF$MietechgrQNTL)[levels(bpDF$MietechgrQNTL)=="1.Quartil"] <- "1.Q"
+levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="4.Quartil"] <- "4.Q"
+levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="3.Quartil"] <- "3.Q"
+levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="2.Quartil"] <- "2.Q"
+levels(bpDF$ArmutchgQNTL)[levels(bpDF$ArmutchgQNTL)=="1.Quartil"] <- "1.Q"
+
+mosaicDF <- table(bpDF$MietechgrQNTL, bpDF$ArmutchgQNTL,dnn=c("Relative Mietpreisänderung","Änderung der Armutsquote"))
+
+assoc(mosaicDF,shade=TRUE) 
+@
+
+\newpage
+<<Miete.2007MAP, fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/miete}{Karte von $Miete_{2007}$}", fig.height=4.8, fig.lp='fig:',fig.pos='H'>>=
+Miete.2007MAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=Miete.2007, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR), 
+                       values = rescale(c(4,7,14)),
+                       guide = "colorbar", limits=c(4,14),
+                       name=expression(paste('Miete'[2007],' ','(Euro/',m^{2},')'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+Miete.2007MAP
+@
+
+<<Miete.2012MAP, fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/miete}{Karte von $Miete_{2012}$}", fig.height=4.8, fig.lp='fig:',fig.pos='H'>>=
+Miete.2012MAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=Miete.2012, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR), 
+                       values = rescale(c(4,7,14)),
+                       guide = "colorbar", limits=c(4,14),
+                       name=expression(paste('Miete'[2012],' ','(Euro/',m^{2},')'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+Miete.2012MAP
+@
+
+<<Armut.2007MAP, fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/armut2007}{Karte von $Armut_{2007}$}", fig.height=5, fig.lp='fig:',fig.pos='H'>>=
+Armut.2007MAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=Armut.2007, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR), 
+                       values = rescale(c(1,20,55)),
+                       guide = "colorbar", limits=c(1,55),
+                       name=expression(paste('Armut'[2007],' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+Armut.2007MAP
+@
+
+<<Armut.2012MAP, fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/armut2012}{Karte von $Armut_{2012}$}", fig.height=5, fig.lp='fig:',fig.pos='H'>>=
+Armut.2012MAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=Armut.2012, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR), 
+                       values = rescale(c(1,20,55)),
+                       guide = "colorbar", limits=c(1,55),
+                       name=expression(paste('Armut'[2012],' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+Armut.2012MAP
+@
+
+\newpage
+\afterpage{
+\begin{landscape}
+<<ViolinFortZuzuegeI, fig.width=9.8, fig.height=5.6, fig.scap='Verteilungen der wohnräumlichen Mobilität für die innere Stadt', fig.cap='Verteilungen der wohnräumlichen Mobilität (\\textit{FortzügeB, ZuzügeB, FortzügeA, ZuzügeA}) für die innere Stadt', fig.lp='fig:',fig.pos='H'>>=
+p1FortzuegeRI  <- ggplot(bpGesamtInnere, aes(Gentri, 
+                                            FortzuegeR, 
+                                            weight=E_E.2007,
+                                            fill=Gentri)) + 
+  ylab(expression(paste('FortzügeB',' ','(%)')))+
+  scale_y_continuous(breaks=pretty_breaks(n=brueche)) +
+  coord_cartesian(ylim = c(3, 17)) +
+  geom_violin(scale = "width") + bp_themeMITRAND
+p1FortzuegeRI <- p1FortzuegeRI + geom_boxplot(width=.3)
+#p1FortzuegeRI
+
+p1FortzuegeUDARI  <- ggplot(bpGesamtInnere, aes(Gentri, 
+                                             FortzuegeUDAR, 
+                                             weight=E_E.2007,
+                                             fill=Gentri)) + 
+  ylab(expression(paste('FortzügeA',' ','(%)')))+
+  scale_y_continuous(breaks=pretty_breaks(n=brueche)) +
+  coord_cartesian(ylim = c(1,10)) +
+  geom_violin(scale = "width") + bp_themeMITRAND
+p1FortzuegeUDARI <- p1FortzuegeUDARI + geom_boxplot(width=.3)
+#p1FortzuegeUDARI
+
+p1ZuzuegeRI  <- ggplot(bpGesamtInnere, aes(Gentri, 
+                                             ZuzuegeR, 
+                                             weight=E_E.2007,
+                                             fill=Gentri)) + 
+  ylab(expression(paste('ZuzügeB',' ','(%)')))+
+  scale_y_continuous(breaks=pretty_breaks(n=brueche)) +
+  coord_cartesian(ylim = c(5, 22)) +
+  geom_violin(scale = "width") + bp_themeMITRAND
+p1ZuzuegeRI <- p1ZuzuegeRI + geom_boxplot(width=.3)
+#p1ZuzuegeRI
+
+p1ZuzuegeUDARI  <- ggplot(bpGesamtInnere, aes(Gentri, 
+                                              ZuzuegeUDAR, 
+                                              weight=E_E.2007,
+                                              fill=Gentri)) + 
+  ylab(expression(paste('ZuzügeA',' ','(%)')))+
+  scale_y_continuous(breaks=pretty_breaks(n=brueche)) +
+  coord_cartesian(ylim = c(1, 14)) +
+  geom_violin(scale = "width") + bp_themeMITRAND
+p1ZuzuegeUDARI <- p1ZuzuegeUDARI + geom_boxplot(width=.3)
+#p1ZuzuegeUDARI
+
+grid.arrange(p1FortzuegeRI, p1ZuzuegeRI,
+             p1FortzuegeUDARI, p1ZuzuegeUDARI,
+             ncol=2, nrow=2, widths=c(1,1,1,1))
+@
+\end{landscape}
+}
+
+<<FortzuegeRMAP,fig.height=5, fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/binnenfortzuege}{Karte von \\textit{FortzügeB}}", fig.lp='fig:',fig.pos='H'>>=
+FortzuegeRMAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=FortzuegeR, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR,superhiCOLOR), 
+                       values = rescale(c(3.9,8.92,15,25)),
+                       guide = "colorbar", limits=c(3.4,25),
+                       name=expression(paste('FortzuegeB',' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+FortzuegeRMAP
+@
+
+<<ZuzuegeRMAP,fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/binnenzuzuege}{Karte von \\textit{ZuzügeB}}", fig.height=5, fig.lp='fig:', fig.pos='H'>>=
+ZuzuegeRMAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=ZuzuegeR, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR,superhiCOLOR), 
+                       values = rescale(c(3.8,9.18,13,22)),
+                       guide = "colorbar", limits=c(3.8,22),
+                       name=expression(paste('ZuzügeB',' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+ZuzuegeRMAP
+@
+
+<<FortzuegeUDARMAP,fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/aussenfortzuege}{Karte von \\textit{FortzügeA}}", fig.height=5, fig.lp='fig:', fig.pos='H'>>=
+FortzuegeUDARMAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=FortzuegeUDAR, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR,superhiCOLOR), 
+                       values = rescale(c(0,3.17,6.5,13.5)),
+                       guide = "colorbar", limits=c(0,14),
+                       name=expression(paste('FortzügeA',' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+FortzuegeUDARMAP
+@
+
+<<ZuzuegeUDARMAP,fig.height=5, fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/aussenzuzuege}{Karte von \\textit{ZuzügeA}}", fig.lp='fig:',fig.pos='H'>>=
+ZuzuegeUDARMAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=ZuzuegeUDAR, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR,superhiCOLOR), 
+                       values = rescale(c(0,3.65,7,17)),
+                       guide = "colorbar", limits=c(0,17),
+                       name=expression(paste('ZuzuegeA',' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+ZuzuegeUDARMAP
+@
+
+%<<GentriAMAP, fig.height=5, fig.cap="\\href{http://www.gmx.de}{Karte von \\textit{Kategorie}}", fig.lp='fig:'>>=
+%GentriAMAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+%  geom_polygon(aes(fill=GentriA, group=id)) + geom_path(color="grey20", alpha=0.3, size=0.1) +
+%  scale_fill_discrete(name=expression(paste('Kategorie (alternativ)'))) +  
+%  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + theme(plot.margin=unit(c(0,0,-0.7,0), "cm")) +
+%  kartenlayoutCAT
+%GentriAMAP
+%@
+
+<<IntraLOR,fig.height=3.8,fig.scap="Anteil der Intra-LOR Umzüge an allen Fortzügen in \\%", fig.cap="Zeitverlauf des Anteils der Umzüge innerhalb der LOR (Intra-LOR Umzüge) an allen Binnenumzügen in \\% nach \\textit{Kategorie}. Aufgrund einer fehlerhaften Lieferung durch das Amt für Statistik Berlin Brandenburg stehen keine Daten für Intra-LOR Umzüge für das Jahr 2007 zur Verfügung.", fig.lp='fig:',fig.pos='H'>>=
+INTRAdflongI  <- subset(INTRAdflong, STADTRAUM=="innere Stadt")
+
+INTRAdflongI <- INTRAdflongI[order(INTRAdflongI$ZEIT, INTRAdflongI$Gentri),]
+
+ddply(INTRAdflongI, c("ZEIT","Gentri"), summarize,
+      IntraR_mean=round(weighted.mean(IntraR,E_E),digits=1),
+      IntraFR_mean=round(weighted.mean(IntraFR,E_E),digits=1)) -> summaryINTRAdflongI
+
+ddply(INTRAdflong, c("ZEIT","Gentri"), summarize,
+      IntraR_mean=round(weighted.mean(IntraR,E_E),digits=1),
+      IntraFR_mean=round(weighted.mean(IntraFR,E_E),digits=1)) -> summaryINTRAdflong
+
+pIntraG <- ggplot(summaryINTRAdflong, aes(ZEIT, IntraFR_mean, group = Gentri, colour = Gentri)) + 
+  geom_line(size=0.7) +
+  theme(axis.title.y = element_text(face="bold",colour = "grey50"),
+        axis.title.x = element_blank(),
+        legend.text=element_text(colour = "grey50"),
+        legend.title=element_text(face="bold",colour = "grey50"),
+        legend.position="none",
+        plot.margin=unit(c(0.5,0.3,0.5,0.5), "cm")) +
+  ylab("Intra-LOR Umzüge in %") +
+  annotate("text", x = 2009, y = 13, label = "gesamte Stadt", size=4, face="bold",colour = "grey50") +
+  scale_y_continuous(breaks=seq(10,22,2), limits=c(11.5,23.5))
+#pIntraG
+
+pIntraI <- ggplot(summaryINTRAdflongI, aes(ZEIT, IntraFR_mean, group = Gentri, colour = Gentri)) + 
+  geom_line(size=0.7) +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.text=element_text(colour = "grey50"),
+        legend.title=element_text(face="bold",colour = "grey50"),
+        plot.margin=unit(c(0.5,0.5,0.5,-0.3), "cm"),
+        legend.position = c(0.8,0.8)) +
+  ylab("Intra-LOR Umzüge in %")  +  
+  annotate("text", x=2009, y = 13, label = "innere Stadt", size=4, face="bold",colour = "grey50") +
+  scale_y_continuous(breaks=seq(10,22,2), limits=c(11.5,23.5))
+#pIntraI
+
+grid.arrange(pIntraG, pIntraI, ncol=2, nrow=1, widths=c(1.15,1))
+@
+
+\newpage
+<<ResiduenEpsilonMAP, fig.scap="Karte der Residuen $\\hat{\\varepsilon}$ des SAR Modells \\textit{FortzügeB}", fig.cap="Karte der Residuen $\\hat{\\varepsilon}$ des gewichteten SAR Modells auf \\textit{FortzügeB} (Modell 1)", fig.height=4.8, fig.lp='fig:',fig.pos='H'>>=
+ResiduenEpsilonMAP
+@
+
+<<ResiduenEMAP, fig.scap="Karte der räumlichen Komponente des SAR Modells \\textit{FortzügeB}", fig.cap="Karte der räumlichen Komponente $\\hat{Y}-X^{T}\\hat{\\beta}$ des gewichteten SAR Modells auf \\textit{FortzügeB} (Modell 1)", fig.height=4.8, fig.lp='fig:',fig.pos='H'>>=
+ResiduenEMAP
+@
+
+\newpage
+<<OekoVerdraengungAMAP, fig.scap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/oekoverdraengung_b}{Karte der ökonomischen Verdrängungsraten (Version A)}", fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/oekoverdraengung_a}{Karte der geschätzten ökonomischen Verdrängungsraten nach Version A: Anteil der zwischen 2007 und 2012 ökonomisch Verdrängten an der Gesamtbevölkerung in \\%.}", fig.height=4.8, fig.lp='fig:',fig.pos='H'>>=
+OekoVerdraengungAMAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=OekoVerdraengungA, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR,superhiCOLOR), 
+                       values = rescale(c(0,2,5,9.5)),
+                       guide = "colorbar", limits=c(0,10),
+                       name=expression(paste('(A) Verdrängungsrate',' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+OekoVerdraengungAMAP
+@
+
+<<OekoVerdraengungBMAP, fig.scap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/oekoverdraengung_b}{Karte der ökonomischen Verdrängungsraten (Version B)}", fig.cap="\\href{http://amor.cms.hu-berlin.de/~schulzgu/gentri/oekoverdraengung_b}{Karte der geschätzten ökonomischen Verdrängungsraten nach Version B: Anteil der Binnenfortzüge, der auf immobilienwirtschaftliche Aufwertung zurückzuführen ist in \\%.}", fig.height=4.8, fig.lp='fig:',fig.pos='H'>>=
+OekoVerdraengungBMAP <- ggplot(LOR4reg.fort, aes(x=long, y=lat, group = id)) + 
+  geom_polygon(aes(fill=OekoVerdraengungB, group=id)) + geom_path(color="grey", alpha=0.0, size=0.5) +
+  scale_fill_gradientn(colours = c(lowCOLOR,midCOLOR,hiCOLOR,superhiCOLOR), 
+                       values = rescale(c(0,4,8,15)),
+                       guide = "colorbar", limits=c(0,15),
+                       name=expression(paste('(B) Verdrängungsrate',' ','(%)'))) +
+  coord_map("polyconic",xlim = c(13.08,13.77),ylim = c(52.33,52.69)) + kartenlayout 
+OekoVerdraengungBMAP
+@

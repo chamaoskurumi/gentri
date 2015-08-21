@@ -1,0 +1,228 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage{amsmath,amssymb,amsfonts,amsthm}    % Typical maths resource packages
+\usepackage{graphicx}                           % Packages to allow inclusion of graphics
+\usepackage[ngerman,english]{babel}
+\usepackage[backend=bibtex, style=authoryear-comp, language=ngerman, isbn=false, url=true, doi=false, eprint=false, natbib=true, citestyle=authoryear-comp]{biblatex}
+\usepackage[utf8]{inputenc}
+\usepackage[pdfpagelabels,debug=true]{hyperref}            % For creating hyperlinks in cross references
+\usepackage{acronym}
+\usepackage{afterpage}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{pifont}
+\usepackage{csquotes}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{abbrevs}
+\usepackage{eurosym}
+\usepackage{nicefrac}
+\usepackage{sectsty}
+\usepackage{mathtools}
+\usepackage{pdflscape}
+\usepackage{float} 
+\usepackage{subcaption}
+\newcommand{\subfloat}[2][need a sub-caption]{\subcaptionbox{#1}{#2}}
+
+\usepackage[font=small,skip=7pt]{caption}
+\usepackage{bm}
+\DeclareRobustCommand{\officialeuro}{%
+  \ifmmode\expandafter\text\fi
+  {\fontencoding{U}\fontfamily{eurosym}\selectfont e}}
+\usepackage{lscape}
+\newcommand{\blandscape}{\begin{landscape}}
+\newcommand{\elandscape}{\end{landscape}}
+
+\usepackage{dcolumn}
+\usepackage{array}
+\usepackage{arydshln}
+\usepackage{etoolbox}
+\AtBeginEnvironment{table}{\addvspace{6mm}}\AtEndEnvironment{table}{\addvspace{1mm}}
+
+\usepackage[activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10]{microtype}
+\microtypecontext{spacing=nonfrench}
+
+\setlength\dashlinedash{0.4pt}
+\setlength\dashlinegap{2pt}
+\setlength\arrayrulewidth{0.3pt}
+
+\interfootnotelinepenalty=2000
+%\sloppy
+\setlength{\emergencystretch}{2em}
+\hyphenpenalty=3500
+\doublehyphendemerits=9000
+\finalhyphendemerits=6000
+
+\bibliography{Bibliographie}
+
+% -------------------------------
+% --- some layout definitions ---
+% -------------------------------
+
+% define topline
+\usepackage[automark]{scrpage2}
+\pagestyle{scrheadings}
+\automark{section}
+\clearscrheadings
+\ohead{\headmark}
+
+% define page size, margin size
+\setlength{\headheight}{2\baselineskip}
+\voffset=-3cm
+\hoffset=-2.5cm
+\textheight25.4cm
+\textwidth15.5cm
+\topmargin1cm
+\oddsidemargin3cm
+\evensidemargin3cm
+
+\setlength{\footnotesep}{0.5cm}
+\setlength{\skip\footins}{1cm}
+
+\renewcommand{\baselinestretch}{1.5}
+\renewcommand{\labelitemii}{-}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\newcommand{\defeq}{\vcentcolon=}
+\newcommand{\eqdef}{=\vcentcolon}
+
+%\allsectionsfont{\normalfont\sffamily\bfseries}
+
+\begin{document}
+
+\newname\Europroqm{$\nicefrac{\text{\euro}}{m^2}$}
+\newname\R{\textsf{R}}
+\newname\knitr{\textsf{knitr}}
+\newname\Armutchg{$\Delta Armut$}
+\newname\Mietechgr{$\Delta_{r}Miete$}
+\newname\Kategorie{\textit{Kategorie}}
+
+<<setupPRE,include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+concordance=TRUE,echo=FALSE, cache=FALSE, 
+message=FALSE,warning=FALSE,
+tidy=TRUE, self.contained=FALSE#,fig.pos='H'
+)
+knit_hooks$set(par = function(before, options, envir) {
+  if (before) par(mar = c(4, 4, .1, .1))
+})
+@
+
+<<DataLoad,include=FALSE>>=
+load("/home/dao/Desktop/MasterArbeit/R_files/KNITR/FINAL_WORKSPACE.Rdata")
+setwd("/home/dao/Desktop/MasterArbeit/R_files/KNITR/")
+@
+
+
+<<setup, include=FALSE, cache=FALSE, echo=FALSE>>=
+options(replace.assign=TRUE,width=80)
+options(scipen = 1, digits = 2)
+Sys.setenv(TEXINPUTS=getwd(),
+           BIBINPUTS=getwd(),
+           BSTINPUTS=getwd())
+@
+
+<<crop-hook, cache=FALSE>>=
+knit_hooks$set(crop=hook_pdfcrop)
+@
+
+% -------------------------------
+% --- frontmatter: Title page ---
+% -------------------------------
+\pagenumbering{roman}
+\pagestyle{empty}
+\selectlanguage{ngerman} 
+\input{Andere/Titelseite}
+
+% -----------------------------
+% --- frontmatter: Abstract ---
+% -----------------------------
+\newpage
+\input{Andere/Abstract}
+
+% -----------------------------
+% --- frontmatter: Contents ---
+% -----------------------------
+\newpage
+\pagenumbering{gobble}
+\setcounter{tocdepth}{3}
+\tableofcontents
+\clearpage
+
+% ----------------------------------------------------
+% --- frontmatter: List of Figures (not mandatory) ---
+% ----------------------------------------------------
+\newpage
+\addcontentsline{toc}{section}{Abbildungsverzeichnis}
+\ohead[]{\rightmark}
+\listoffigures
+
+% ---------------------------------------------------
+% --- frontmatter: List of Tables (not mandatory) ---
+% ---------------------------------------------------
+\newpage
+\addcontentsline{toc}{section}{Tabellenverzeichnis}
+\listoftables
+
+% -------------------------------
+% --- main body of the thesis ---
+% -------------------------------
+\newpage
+\pagestyle{plain}
+\setcounter{page}{1}    % start page numbering anew
+\pagenumbering{arabic}  % page numbers in arabic style
+
+\newpage
+<<'child-Einleitung/Einleitung.Rnw', child='Einleitung/Einleitung.Rnw'>>=
+@
+
+\newpage
+<<'child-Gentri/Gentri.Rnw', child='Gentri/Gentri.Rnw'>>=
+@
+
+\newpage
+<<'child-DatenUNDMethoden/DatenUNDMethoden.Rnw', child='DatenUNDMethoden/DatenUNDMethoden.Rnw'>>=
+@
+
+\newpage
+<<'child-Analyse/Analyse.Rnw', child='Analyse/Analyse.Rnw'>>=
+@
+
+\newpage
+<<'child-Analyse/ZusammenfassungUNDDiskussion.Rnw', child='ZusammenfassungUNDDiskussion/ZusammenfassungUNDDiskussion.Rnw'>>=
+@
+
+% ----------------
+% --- appendix ---
+% ----------------
+\appendix
+
+% literature
+\newpage
+\addcontentsline{toc}{section}{Literatur}
+\printbibliography
+
+% figures (not mandatory)
+\newpage
+\renewcommand\thefigure{\thesection.\arabic{figure}}   
+\setcounter{figure}{0}    
+<<'child-Anhang/Anhang_Abbildungen.Rnw', child='Anhang/Anhang_Abbildungen.Rnw'>>=
+@
+
+% tables (not mandatory)
+\newpage
+\renewcommand\thetable{\thesection.\arabic{table}} 
+\setcounter{table}{0}   
+\input{Anhang/Anhang_Tabellen}
+
+
+% --------------------------------------------
+% --- last page: Declaration of Authorship ---
+% --------------------------------------------
+
+\newpage
+\newpage
+\thispagestyle{empty}
+\input{Andere/Eigenstaendigkeitserklaerung}
+
+\end{document}
