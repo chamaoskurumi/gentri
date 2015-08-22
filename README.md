@@ -7,6 +7,6 @@ Auf Anfrage können die in der Studie verwendeten Daten zur Verfügung gestellt 
 
 Die begleitend zur Masterarbeit erstellte Website ist [unter diesem Link](http://amor.cms.hu-berlin.de/~schulzgu/gentri) zu erreichen.
 
-[<img src="http://amor.cms.hu-berlin.de/~schulzgu/gentri/docs/Website_Screenshot.png">](http://amor.cms.hu-berlin.de/~schulzgu/gentri)
+[<img src="http://amor.cms.hu-berlin.de/~schulzgu/gentri/docs/Website_Screenshot_new.png">](http://amor.cms.hu-berlin.de/~schulzgu/gentri)
 
 
