@@ -5,8 +5,8 @@ Dies ist das Git-Repository zur Dokumentation der Masterarbeit [*Aufwertung und 
 
 Auf Anfrage können die in der Studie verwendeten Daten zur Verfügung gestellt und alle Forschungsergebnisse mithilfe der hier archivierten Syntaxen in *R*/*knitr* reproduziert werden.
 
-Die begleitend zur Masterarbeit erstellte Website ist [unter diesem Link](http://amor.cms.hu-berlin.de/~schulzgu/gentri) zu erreichen.
+Die begleitend zur Masterarbeit erstellte Website ist [unter diesem Link](http://gentrified.space/gentri) zu erreichen.
 
-[<img src="http://amor.cms.hu-berlin.de/~schulzgu/gentri/docs/Website_Screenshot_new.png">](http://amor.cms.hu-berlin.de/~schulzgu/gentri)
+
 
 
